@@ -144,21 +144,32 @@ export class BookingsService {
 
   private resolveClientUrl(): string {
     const configuredUrl = this.configService.get<string>('CLIENT_URL')?.trim();
+    const isProduction = process.env.NODE_ENV === 'production';
+
     if (configuredUrl) {
-      return configuredUrl;
+      const normalizedConfiguredUrl = configuredUrl.startsWith('http')
+        ? configuredUrl
+        : `https://${configuredUrl}`;
+      const isLocalhostConfigured = /^(https?:\/\/)?(localhost|127\.0\.0\.1)(:\d+)?/i.test(
+        configuredUrl,
+      );
+
+      if (!isProduction || !isLocalhostConfigured) {
+        return normalizedConfiguredUrl;
+      }
     }
 
     const vercelUrl = this.configService.get<string>('VERCEL_URL')?.trim();
     if (vercelUrl) {
-      return `https://${vercelUrl}`;
+      return vercelUrl.startsWith('http') ? vercelUrl : `https://${vercelUrl}`;
     }
 
-    if (process.env.NODE_ENV !== 'production') {
+    if (!isProduction) {
       return 'http://localhost:3000';
     }
 
     throw new InternalServerErrorException(
-      'CLIENT_URL is missing in production environment.',
+      'CLIENT_URL is invalid for production. Set it to your deployed frontend URL.',
     );
   }
 }
