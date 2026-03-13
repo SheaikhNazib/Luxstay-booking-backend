@@ -6,8 +6,12 @@ import { BookingsModule } from './modules/bookings/bookings.module';
 import { StripeModule } from './modules/stripe/stripe.module';
 import { EmailModule } from './modules/email/email.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
 
 @Module({
+  controllers: [AppController],
+  providers: [AppService],
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     DatabaseModule,
