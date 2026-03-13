@@ -1,7 +1,8 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { json, urlencoded } from 'express';
+import { json, urlencoded, static as serveStatic } from 'express';
+import swaggerUiDist from 'swagger-ui-dist';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
@@ -45,6 +46,11 @@ async function bootstrap() {
   SwaggerModule.setup('api/docs', app, document, {
     swaggerOptions: { persistAuthorization: true },
   });
+
+  // On some serverless deployments, swagger-ui static assets are not auto-served
+  // at the generated /api/docs/docs/* paths, which results in a blank docs page.
+  const expressApp = app.getHttpAdapter().getInstance();
+  expressApp.use('/api/docs/docs', serveStatic(swaggerUiDist.getAbsoluteFSPath()));
 
   const port = process.env.PORT ?? 3001;
   await app.listen(port);
