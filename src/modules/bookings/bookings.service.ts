@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -50,7 +51,7 @@ export class BookingsService {
     });
     const savedBooking = await this.bookingRepo.save(booking);
 
-    const clientUrl = this.configService.get<string>('CLIENT_URL');
+    const clientUrl = this.resolveClientUrl();
     const session = await this.stripeService.createCheckoutSession({
       bookingId: savedBooking.id,
       serviceName: service.name,
@@ -139,5 +140,25 @@ export class BookingsService {
     booking.paymentStatus = PaymentStatus.PAID;
     const savedBooking = await this.bookingRepo.save(booking);
     return { booking: savedBooking, justMarkedPaid: true };
+  }
+
+  private resolveClientUrl(): string {
+    const configuredUrl = this.configService.get<string>('CLIENT_URL')?.trim();
+    if (configuredUrl) {
+      return configuredUrl;
+    }
+
+    const vercelUrl = this.configService.get<string>('VERCEL_URL')?.trim();
+    if (vercelUrl) {
+      return `https://${vercelUrl}`;
+    }
+
+    if (process.env.NODE_ENV !== 'production') {
+      return 'http://localhost:3000';
+    }
+
+    throw new InternalServerErrorException(
+      'CLIENT_URL is missing in production environment.',
+    );
   }
 }
