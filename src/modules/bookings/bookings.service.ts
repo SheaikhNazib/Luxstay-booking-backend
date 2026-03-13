@@ -143,7 +143,9 @@ export class BookingsService {
   }
 
   private resolveClientUrl(): string {
-    const configuredUrl = this.configService.get<string>('CLIENT_URL')?.trim();
+    const configuredUrl =
+      this.configService.get<string>('CLIENT_URL')?.trim() ??
+      this.configService.get<string>('FRONTEND_URL')?.trim();
     const isProduction = process.env.NODE_ENV === 'production';
 
     if (configuredUrl) {
@@ -159,17 +161,12 @@ export class BookingsService {
       }
     }
 
-    const vercelUrl = this.configService.get<string>('VERCEL_URL')?.trim();
-    if (vercelUrl) {
-      return vercelUrl.startsWith('http') ? vercelUrl : `https://${vercelUrl}`;
-    }
-
     if (!isProduction) {
       return 'http://localhost:3000';
     }
 
     throw new InternalServerErrorException(
-      'CLIENT_URL is invalid for production. Set it to your deployed frontend URL.',
+      'CLIENT_URL (or FRONTEND_URL) is invalid for production. Set it to your deployed frontend URL.',
     );
   }
 }
